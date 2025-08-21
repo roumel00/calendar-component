@@ -971,12 +971,14 @@ export const CalendarItem = memo(({ calEvent, className }) => {
     return (
       <div 
         className={cn(
-          'text-xs p-2 rounded text-white font-medium h-full flex items-start overflow-clip hover:-translate-y-1 hover:shadow-lg transition-all duration-200 ease-in-out cursor-pointer',
+          'text-xs p-2 rounded text-white font-medium h-full flex items-start overflow-hidden hover:-translate-y-1 hover:shadow-lg transition-all duration-200 ease-in-out cursor-pointer',
           className
         )}  
         style={{ backgroundColor: calEvent.status.color }}
       >
-        <span className="truncate">{calEvent.name}</span>
+        <span className="block w-full whitespace-normal break-words [overflow-wrap:anywhere]">
+          {calEvent.name}
+        </span>
       </div>
     );
   }
