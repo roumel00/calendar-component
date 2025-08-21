@@ -66,12 +66,43 @@ This upgraded calendar component includes:
 The calendar component is highly configurable and can be used in your own projects:
 
 ```jsx
-import { CalendarComponent } from '@/components/calendar-component';
+import {
+  CalendarBody,
+  CalendarDate,
+  CalendarDatePagination,
+  CalendarHeader,
+  CalendarItem,
+  CalendarProvider,
+  CalendarView,
+  CalendarDatePicker,
+} from '@/components/ui/shadcn-io/calendar';
+...
 
 export default function MyPage() {
+  ...
   return (
     <div className="min-h-screen bg-background">
-      <CalendarComponent />
+      <CalendarProvider className="w-full">
+        <CalendarDate>
+          <CalendarDatePagination />
+          <CalendarDatePicker />
+          <CalendarView />
+        </CalendarDate>
+        <CalendarHeader />
+        <CalendarBody 
+          calEvents={events}
+          startTime="08:00"
+          endTime="20:00"
+          interval={15}
+          disabledDays={[0, 6]}
+          onDayClick={handleDayClick}
+          onTimeSlotClick={handleTimeSlotClick}
+          onEventClick={handleEventClick}
+          onEventUpdate={handleEventUpdate}
+        >
+          {({ calEvent }) => <CalendarItem calEvent={calEvent} key={calEvent.id} />}
+        </CalendarBody>
+      </CalendarProvider>
     </div>
   );
 }
