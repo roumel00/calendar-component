@@ -284,7 +284,8 @@ const DayView = memo(({
   startTime = DEFAULT_START_TIME,
   endTime = DEFAULT_END_TIME,
   interval = DEFAULT_INTERVAL,
-  disabledDays = []
+  disabledDays = [],
+  onTimeSlotClick
 }) => {
   const [year] = useCalendarYear();
   const [month] = useCalendarMonth();
@@ -300,8 +301,10 @@ const DayView = memo(({
     const isDisabled = disabledDays.includes(dayOfWeek);
     
     if (isDisabled) return;
-    console.log(`Clicked on ${format(currentDay, 'EEEE, MMMM do, yyyy')} at ${timeSlot.time}`);
-  }, [currentDay, disabledDays]);
+    if (onTimeSlotClick) {
+      onTimeSlotClick(currentDay, timeSlot);
+    }
+  }, [currentDay, disabledDays, onTimeSlotClick]);
 
   const { pixels: slotHeight, class: slotHeightClass } = getSlotStyles(interval);
   const isToday = isSameDay(currentDay, new Date());
@@ -355,7 +358,8 @@ const WeekView = memo(({
   endTime = DEFAULT_END_TIME,
   interval = DEFAULT_INTERVAL,
   disabledDays = [],
-  startDay
+  startDay,
+  onTimeSlotClick
 }) => {
   const [weekStart] = useCalendarWeek();
 
@@ -383,8 +387,10 @@ const WeekView = memo(({
 
   const handleTimeSlotClick = useCallback((day, timeSlot, isDisabled) => {
     if (isDisabled) return;
-    console.log(`Clicked on ${format(day, 'EEEE, MMMM do, yyyy')} at ${timeSlot.time}`);
-  }, []);
+    if (onTimeSlotClick) {
+      onTimeSlotClick(day, timeSlot);
+    }
+  }, [onTimeSlotClick]);
 
   const { pixels: slotHeight, class: slotHeightClass } = getSlotStyles(interval);
 
@@ -465,7 +471,7 @@ const OutOfBoundsDay = memo(({ day }) => (
 OutOfBoundsDay.displayName = 'OutOfBoundsDay';
 
 // Month view component
-const MonthView = memo(({ calEvents, children, startDay }) => {
+const MonthView = memo(({ calEvents, children, startDay, onDayClick }) => {
   const [month] = useCalendarMonth();
   const [year] = useCalendarYear();
 
@@ -506,8 +512,10 @@ const MonthView = memo(({ calEvents, children, startDay }) => {
   }, [calEvents, daysInMonth, year, month]);
 
   const handleDayClick = useCallback((day) => {
-    console.log(`Clicked on day: ${day} ${convertNumToMonth(month)} ${year}`);
-  }, [month, year]);
+    if (onDayClick) {
+      onDayClick(day, month, year);
+    }
+  }, [onDayClick, month, year]);
 
   const days = [];
 
@@ -581,7 +589,9 @@ export const CalendarBody = memo(({
   startTime = DEFAULT_START_TIME,
   endTime = DEFAULT_END_TIME,
   interval = DEFAULT_INTERVAL,
-  disabledDays = []
+  disabledDays = [],
+  onDayClick,
+  onTimeSlotClick
 }) => {
   const { startDay } = useContext(CalendarContext);
   const [view] = useCalendarView();
@@ -592,7 +602,9 @@ export const CalendarBody = memo(({
     startTime,
     endTime,
     interval,
-    disabledDays
+    disabledDays,
+    onDayClick,
+    onTimeSlotClick
   };
 
   switch (view) {
@@ -602,7 +614,7 @@ export const CalendarBody = memo(({
       return <WeekView {...commonProps} startDay={startDay} />;
     case CALENDAR_VIEWS.MONTH:
     default:
-      return <MonthView calEvents={calEvents} children={children} startDay={startDay} />;
+      return <MonthView {...commonProps} startDay={startDay} />;
   }
 });
 
@@ -789,7 +801,12 @@ export const CalendarDatePicker = memo(() => {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">
-        <Calendar mode="single" onSelect={handleDateSelect} />
+      <Calendar
+        mode="single"
+        onSelect={handleDateSelect}
+        className="rounded-md border shadow-sm"
+        captionLayout="dropdown"
+      />
       </PopoverContent>
     </Popover>
   );

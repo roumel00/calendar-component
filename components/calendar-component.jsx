@@ -50,6 +50,18 @@ const exampleCalEvents = [
 ];
     
 export const CalendarComponent = () => {
+  const handleDayClick = (day, month, year) => {
+    const monthNames = [
+      'January', 'February', 'March', 'April', 'May', 'June',
+      'July', 'August', 'September', 'October', 'November', 'December'
+    ];
+    console.log(`Clicked on day: ${day} ${monthNames[month]} ${year}`);
+  };
+
+  const handleTimeSlotClick = (date, timeSlot) => {
+    console.log(`Clicked on ${date.toDateString()} at ${timeSlot.time}`);
+  };
+
   return (
     <div className="my-8">
       <div className="mb-4">
@@ -72,6 +84,8 @@ export const CalendarComponent = () => {
           endTime="20:00"
           interval={15}
           disabledDays={[0, 6]}
+          onDayClick={handleDayClick}
+          onTimeSlotClick={handleTimeSlotClick}
         >
           {({ calEvent }) => <CalendarItem calEvent={calEvent} key={calEvent.id} />}
         </CalendarBody>
