@@ -11,8 +11,6 @@ import {
   CalendarView,
   CalendarDatePicker,
 } from '@/components/ui/shadcn-io/calendar';
-import { DndProvider } from 'react-dnd';
-import { HTML5Backend } from 'react-dnd-html5-backend';
 
 const exampleCalEvents = [
   {
@@ -97,29 +95,27 @@ export const CalendarComponent = () => {
         </p>
       </div>
 
-      <DndProvider backend={HTML5Backend}>
-        <CalendarProvider className="w-full">
-          <CalendarDate>
-            <CalendarDatePagination />
-            <CalendarDatePicker />
-            <CalendarView />
-          </CalendarDate>
-          <CalendarHeader />
-          <CalendarBody 
-            calEvents={events}
-            startTime="08:00"
-            endTime="20:00"
-            interval={15}
-            disabledDays={[0, 6]}
-            onDayClick={handleDayClick}
-            onTimeSlotClick={handleTimeSlotClick}
-            onEventClick={handleEventClick}
-            onEventUpdate={handleEventUpdate}
-          >
-            {({ calEvent }) => <CalendarItem calEvent={calEvent} key={calEvent.id} />}
-          </CalendarBody>
-        </CalendarProvider>
-      </DndProvider>
+      <CalendarProvider className="w-full">
+        <CalendarDate>
+          <CalendarDatePagination />
+          <CalendarDatePicker />
+          <CalendarView />
+        </CalendarDate>
+        <CalendarHeader />
+        <CalendarBody 
+          calEvents={events}
+          startTime="08:00"
+          endTime="20:00"
+          interval={15}
+          disabledDays={[0, 6]}
+          onDayClick={handleDayClick}
+          onTimeSlotClick={handleTimeSlotClick}
+          onEventClick={handleEventClick}
+          onEventUpdate={handleEventUpdate}
+        >
+          {({ calEvent }) => <CalendarItem calEvent={calEvent} key={calEvent.id} />}
+        </CalendarBody>
+      </CalendarProvider>
     </div>
   );
 };  

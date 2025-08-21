@@ -26,6 +26,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { DndProvider } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
 
 // Constants
 const CALENDAR_VIEWS = {
@@ -1192,11 +1194,13 @@ export const CalendarProvider = memo(({
   children,
   className
 }) => (
-  <CalendarContext.Provider value={{ locale, startDay }}>
-    <div className={cn('relative flex flex-col', className)}>
-      {children}
-    </div>
-  </CalendarContext.Provider>
+  <DndProvider backend={HTML5Backend}>
+    <CalendarContext.Provider value={{ locale, startDay }}>
+      <div className={cn('relative flex flex-col', className)}>
+        {children}
+      </div>
+    </CalendarContext.Provider>
+  </DndProvider>
 ));
 
 CalendarProvider.displayName = 'CalendarProvider';
