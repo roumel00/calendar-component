@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useCallback } from 'react';
 import {
   CalendarBody,
   CalendarDate,
@@ -10,6 +11,7 @@ import {
   CalendarView,
   CalendarDatePicker,
 } from '@/components/ui/shadcn-io/calendar';
+import { DndCalendarProvider } from './dnd-provider';
 
 const exampleCalEvents = [
   {
@@ -50,6 +52,8 @@ const exampleCalEvents = [
 ];
     
 export const CalendarComponent = () => {
+  const [calEvents, setCalEvents] = useState(exampleCalEvents);
+
   const handleDayClick = (day, month, year) => {
     const monthNames = [
       'January', 'February', 'March', 'April', 'May', 'June',
@@ -67,35 +71,92 @@ export const CalendarComponent = () => {
     console.log(`Event details:`, calEvent);
   };
 
+  const handleEventDrop = useCallback((draggedEvent, dropTarget) => {
+    const { date, timeSlot, view } = dropTarget;
+    
+    console.log('Event dropped:', {
+      event: draggedEvent.name,
+      targetDate: date,
+      targetTime: timeSlot?.time,
+      view
+    });
+
+    // Update the event with new date/time
+    setCalEvents(prevEvents => 
+      prevEvents.map(event => {
+        if (event.id === draggedEvent.id) {
+          const newEvent = { ...event };
+          
+          if (view === 'day' || view === 'week') {
+            // For day/week views, update the time
+            if (timeSlot) {
+              const [hours, minutes] = timeSlot.time.split(':').map(Number);
+              const newStartDate = new Date(date);
+              newStartDate.setHours(hours, minutes, 0, 0);
+              
+              const duration = new Date(event.endAt).getTime() - new Date(event.startAt).getTime();
+              const newEndDate = new Date(newStartDate.getTime() + duration);
+              
+              newEvent.startAt = newStartDate.toISOString();
+              newEvent.endAt = newEndDate.toISOString();
+            }
+          } else {
+            // For month view, keep the same time but change the date
+            const originalStart = new Date(event.startAt);
+            const originalEnd = new Date(event.endAt);
+            
+            const newStartDate = new Date(date);
+            newStartDate.setHours(originalStart.getHours(), originalStart.getMinutes(), 0, 0);
+            
+            const newEndDate = new Date(date);
+            newEndDate.setHours(originalEnd.getHours(), originalEnd.getMinutes(), 0, 0);
+            
+            newEvent.startAt = newStartDate.toISOString();
+            newEvent.endAt = newEndDate.toISOString();
+          }
+          
+          return newEvent;
+        }
+        return event;
+      })
+    );
+  }, []);
+
   return (
     <div className="my-8">
       <div className="mb-4">
         <h2 className="text-2xl tracking-tight mb-2">Calendar</h2>
         <p className="text-muted-foreground text-lg mb-2">
-          This component provides a calendar with a range of options.
+          This component provides a calendar with drag and drop functionality for events.
+        </p>
+        <p className="text-sm text-muted-foreground">
+          Try dragging events between different dates and time slots!
         </p>
       </div>
 
-      <CalendarProvider className="w-full">
-        <CalendarDate>
-          <CalendarDatePagination />
-          <CalendarDatePicker />
-          <CalendarView />
-        </CalendarDate>
-        <CalendarHeader />
-        <CalendarBody 
-          calEvents={exampleCalEvents}
-          startTime="08:00"
-          endTime="20:00"
-          interval={15}
-          disabledDays={[0, 6]}
-          onDayClick={handleDayClick}
-          onTimeSlotClick={handleTimeSlotClick}
-          onEventClick={handleEventClick}
-        >
-          {({ calEvent }) => <CalendarItem calEvent={calEvent} key={calEvent.id} />}
-        </CalendarBody>
-      </CalendarProvider>
+      <DndCalendarProvider>
+        <CalendarProvider className="w-full">
+          <CalendarDate>
+            <CalendarDatePagination />
+            <CalendarDatePicker />
+            <CalendarView />
+          </CalendarDate>
+          <CalendarHeader />
+          <CalendarBody 
+            calEvents={calEvents}
+            startTime="08:00"
+            endTime="20:00"
+            interval={15}
+            disabledDays={[0, 6]}
+            onDayClick={handleDayClick}
+            onTimeSlotClick={handleTimeSlotClick}
+            onEventClick={handleEventClick}
+            onEventDrop={handleEventDrop}
+          >
+            {({ calEvent }) => <CalendarItem calEvent={calEvent} key={calEvent.id} />}
+          </CalendarBody>
+        </CalendarProvider>
+      </DndCalendarProvider>
     </div>
   );
 };  

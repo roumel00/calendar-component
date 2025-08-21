@@ -11,6 +11,7 @@ import {
   Rows3,
 } from 'lucide-react';
 import { createContext, memo, useCallback, useContext, useMemo } from 'react';
+import { useDrag } from 'react-dnd';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,6 +26,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import { useDroppableTimeSlot } from '@/components/use-droppable-time-slot';
+import { useDroppableDay } from '@/components/use-droppable-day';
 
 // Constants
 const CALENDAR_VIEWS = {
@@ -257,7 +260,7 @@ const TimeColumn = memo(({ timeSlots, interval, width = 'w-20' }) => {
 TimeColumn.displayName = 'TimeColumn';
 
 // Event overlay component
-const EventOverlay = memo(({ events, children, slotHeight, topOffset = 0, onEventClick }) => (
+const EventOverlay = memo(({ events, children, slotHeight, topOffset = 0, onEventClick, onEventDrop, view }) => (
   <div className="absolute inset-0 pointer-events-none px-2" style={{ top: `${topOffset}px` }}>
     {events.map((eventData, eventIndex) => (
       <div
@@ -268,14 +271,8 @@ const EventOverlay = memo(({ events, children, slotHeight, topOffset = 0, onEven
           height: `${eventData.heightSlots * slotHeight - 2}px`,
           zIndex: eventIndex + 1
         }}
-        onClick={(e) => {
-          e.stopPropagation();
-          if (onEventClick) {
-            onEventClick(eventData);
-          }
-        }}
       >
-        {children({ calEvent: eventData })}
+        {children({ calEvent: eventData, onEventClick, onEventDrop, view })}
       </div>
     ))}
   </div>
@@ -292,11 +289,13 @@ const DayView = memo(({
   interval = DEFAULT_INTERVAL,
   disabledDays = [],
   onTimeSlotClick,
-  onEventClick
+  onEventClick,
+  onEventDrop
 }) => {
   const [year] = useCalendarYear();
   const [month] = useCalendarMonth();
   const [day] = useCalendarDay();
+  const [view] = useCalendarView();
 
   const currentDay = useMemo(() => new Date(year, month, day), [year, month, day]);
   const timeSlots = useTimeSlots(startTime, endTime, interval);
@@ -323,22 +322,33 @@ const DayView = memo(({
       <TimeColumn timeSlots={timeSlots} interval={interval} />
       
       <div className="flex-grow relative">
-        {timeSlots.map((slot, slotIndex) => (
-          <div
-            key={slot.time}
-            className={cn(
-              isDisabled ? 
-                'bg-secondary hover:bg-secondary cursor-not-allowed' : 
-                'relative cursor-pointer hover:bg-blue-50 transition-colors duration-200',
-              slotHeightClass,
-              isHourSlot(slotIndex, interval) ? 'border-t border-gray-300' : 'border-t border-gray-100',
-              isToday && !isDisabled && 'bg-blue-50/30'
-            )}
-            onClick={() => handleTimeSlotClick(slot)}
-          />
-        ))}
+        {timeSlots.map((slot, slotIndex) => {
+          const { dropRef, getBackgroundColor } = useDroppableTimeSlot({
+            date: currentDay,
+            timeSlot: slot,
+            view: 'day',
+            onEventDrop,
+            isDisabled
+          });
+
+          return (
+            <div
+              ref={dropRef}
+              key={slot.time}
+              className={cn(
+                getBackgroundColor(),
+                'relative transition-colors duration-200',
+                slotHeightClass,
+                isHourSlot(slotIndex, interval) ? 'border-t border-gray-300' : 'border-t border-gray-100',
+                isToday && !isDisabled && 'bg-blue-50/30'
+              )}
+              data-time={slot.time}
+              data-date={currentDay.toISOString()}
+            />
+          );
+        })}
         
-        <EventOverlay events={dayEvents} slotHeight={slotHeight} onEventClick={onEventClick}>
+        <EventOverlay events={dayEvents} slotHeight={slotHeight} onEventClick={onEventClick} onEventDrop={onEventDrop} view="day">
           {children}
         </EventOverlay>
 
@@ -367,9 +377,11 @@ const WeekView = memo(({
   disabledDays = [],
   startDay,
   onTimeSlotClick,
-  onEventClick
+  onEventClick,
+  onEventDrop
 }) => {
   const [weekStart] = useCalendarWeek();
+  const [view] = useCalendarView();
 
   const weekDays = useMemo(() => {
     const days = [];
@@ -389,6 +401,7 @@ const WeekView = memo(({
     const result = {};
     weekDays.forEach((day, dayIndex) => {
       result[dayIndex] = processEvents(day);
+      result[dayIndex] = result[dayIndex].map(event => ({ ...event, dayIndex }));
     });
     return result;
   }, [weekDays, processEvents]);
@@ -442,21 +455,33 @@ const WeekView = memo(({
                 {format(day, 'd')}
               </div>
               
-              {timeSlots.map((slot, slotIndex) => (
-                <div
-                  key={slot.time}
-                  className={cn(
-                    isDisabled ? 
-                      'bg-secondary hover:bg-secondary cursor-not-allowed' : 
-                      'relative cursor-pointer hover:bg-blue-100/50 transition-colors duration-200',
-                    slotHeightClass,
-                    isHourSlot(slotIndex, interval) ? 'border-t border-gray-300' : 'border-t border-gray-100'
-                  )}
-                  onClick={() => handleTimeSlotClick(day, slot, isDisabled)}
-                />
-              ))}
+              {timeSlots.map((slot, slotIndex) => {
+                const { dropRef, getBackgroundColor } = useDroppableTimeSlot({
+                  date: day,
+                  timeSlot: slot,
+                  view: 'week',
+                  onEventDrop,
+                  isDisabled
+                });
+
+                return (
+                  <div
+                    ref={dropRef}
+                    key={slot.time}
+                    className={cn(
+                      getBackgroundColor(),
+                      'relative transition-colors duration-200',
+                      slotHeightClass,
+                      isHourSlot(slotIndex, interval) ? 'border-t border-gray-300' : 'border-t border-gray-100'
+                    )}
+                    data-time={slot.time}
+                    data-date={day.toISOString()}
+                    data-day-index={dayIndex}
+                  />
+                );
+              })}
               
-              <EventOverlay events={dayEvents} slotHeight={slotHeight} topOffset={48} onEventClick={onEventClick}>
+              <EventOverlay events={dayEvents} slotHeight={slotHeight} topOffset={48} onEventClick={onEventClick} onEventDrop={onEventDrop} view="week">
                 {children}
               </EventOverlay>
             </div>
@@ -479,9 +504,10 @@ const OutOfBoundsDay = memo(({ day }) => (
 OutOfBoundsDay.displayName = 'OutOfBoundsDay';
 
 // Month view component
-const MonthView = memo(({ calEvents, children, startDay, onDayClick, onEventClick }) => {
+const MonthView = memo(({ calEvents, children, startDay, onDayClick, onEventClick, onEventDrop }) => {
   const [month] = useCalendarMonth();
   const [year] = useCalendarYear();
+  const [view] = useCalendarView();
 
   const currentMonthDate = useMemo(() => new Date(year, month, 1), [year, month]);
   const daysInMonth = useMemo(() => getDaysInMonth(currentMonthDate), [currentMonthDate]);
@@ -539,11 +565,26 @@ const MonthView = memo(({ calEvents, children, startDay, onDayClick, onEventClic
   for (let day = 1; day <= daysInMonth; day++) {
     const calEventsForDay = calEventsByDay[day] || [];
 
+    const { dropRef, getBackgroundColor } = useDroppableDay({
+      day,
+      month,
+      year,
+      view: 'month',
+      onEventDrop
+    });
+
     days.push(
       <div
-        className="relative flex h-full w-full flex-col gap-1 p-1 text-muted-foreground text-xs cursor-pointer hover:bg-blue-100 transition-colors duration-200"
+        ref={dropRef}
+        className={cn(
+          "relative flex h-full w-full flex-col gap-1 p-1 text-muted-foreground text-xs transition-colors duration-200",
+          getBackgroundColor()
+        )}
         key={day}
         onClick={() => handleDayClick(day)}
+        data-day={day}
+        data-month={month}
+        data-year={year}
       >
         {day}
         <div>
@@ -610,7 +651,8 @@ export const CalendarBody = memo(({
   disabledDays = [],
   onDayClick,
   onTimeSlotClick,
-  onEventClick
+  onEventClick,
+  onEventDrop
 }) => {
   const { startDay } = useContext(CalendarContext);
   const [view] = useCalendarView();
@@ -624,7 +666,8 @@ export const CalendarBody = memo(({
     disabledDays,
     onDayClick,
     onTimeSlotClick,
-    onEventClick
+    onEventClick,
+    onEventDrop
   };
 
   switch (view) {
@@ -964,17 +1007,47 @@ export const CalendarHeader = memo(({ className }) => {
 CalendarHeader.displayName = 'CalendarHeader';
 
 // Calendar item component
-export const CalendarItem = memo(({ calEvent, className }) => {
-  const [view] = useCalendarView();
+export const CalendarItem = memo(({ calEvent, className, onEventClick, onEventDrop, view }) => {
+  const [currentView] = useCalendarView();
+  const viewToUse = view || currentView;
 
-  if (view === CALENDAR_VIEWS.WEEK || view === CALENDAR_VIEWS.DAY) {
+  const [{ isDragging }, drag] = useDrag({
+    type: 'CALENDAR_EVENT',
+    item: {
+      id: calEvent.id,
+      name: calEvent.name,
+      startAt: calEvent.startAt,
+      endAt: calEvent.endAt,
+      status: calEvent.status,
+      view: viewToUse,
+      originalEvent: calEvent
+    },
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+  });
+
+  const handleClick = (e) => {
+    e.stopPropagation();
+    if (onEventClick) {
+      onEventClick(calEvent);
+    }
+  };
+
+  if (viewToUse === CALENDAR_VIEWS.WEEK || viewToUse === CALENDAR_VIEWS.DAY) {
     return (
       <div 
+        ref={drag}
         className={cn(
-          'text-xs p-2 rounded text-white font-medium h-full flex items-start overflow-hidden hover:-translate-y-1 hover:shadow-lg transition-all duration-200 ease-in-out cursor-pointer',
-          className
+          'text-xs p-2 rounded text-white font-medium h-full flex items-start overflow-hidden hover:-translate-y-1 hover:shadow-lg transition-all duration-200 ease-in-out',
+          className,
+          isDragging && 'opacity-50'
         )}  
-        style={{ backgroundColor: calEvent.status.color }}
+        style={{ 
+          backgroundColor: calEvent.status.color,
+          cursor: isDragging ? 'grabbing' : 'grab'
+        }}
+        onClick={handleClick}
       >
         <span className="block w-full whitespace-normal break-words [overflow-wrap:anywhere]">
           {calEvent.name}
@@ -984,7 +1057,12 @@ export const CalendarItem = memo(({ calEvent, className }) => {
   }
 
   return (
-    <div className={cn('flex items-center gap-2 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 ease-in-out cursor-pointer', className)}>
+    <div 
+      ref={drag}
+      className={cn('flex items-center gap-2 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 ease-in-out', className, isDragging && 'opacity-50')}
+      onClick={handleClick}
+      style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
+    >
       <div
         className="h-2 w-2 shrink-0 rounded-full"
         style={{ backgroundColor: calEvent.status.color }} 
