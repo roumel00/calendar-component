@@ -1154,7 +1154,7 @@ export const CalendarItem = memo(({ calEvent, className }) => {
       <div 
         ref={drag}
         className={cn(
-          'text-xs p-2 rounded text-white font-medium h-full flex items-start overflow-hidden transition-all duration-200 ease-in-out cursor-move',
+          'text-xs p-2 rounded text-white font-medium h-full flex items-start overflow-hidden transition-all duration-200 ease-in-out cursor-pointer',
           isDragging ? 'opacity-50 scale-95' : 'hover:-translate-y-1 hover:shadow-lg',
           className
         )}  
@@ -1171,7 +1171,7 @@ export const CalendarItem = memo(({ calEvent, className }) => {
     <div 
       ref={drag}
       className={cn(
-        'flex items-center gap-2 transition-all duration-200 ease-in-out cursor-move',
+        'flex items-center gap-2 transition-all duration-200 ease-in-out cursor-pointer',
         isDragging ? 'opacity-50 scale-95' : 'hover:-translate-y-0.5 hover:shadow-lg',
         className
       )}
