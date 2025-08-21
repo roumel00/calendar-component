@@ -62,6 +62,11 @@ export const CalendarComponent = () => {
     console.log(`Clicked on ${date.toDateString()} at ${timeSlot.time}`);
   };
 
+  const handleEventClick = (calEvent) => {
+    console.log(`Clicked on event: ${calEvent.name} (${calEvent.status.name})`);
+    console.log(`Event details:`, calEvent);
+  };
+
   return (
     <div className="my-8">
       <div className="mb-4">
@@ -86,6 +91,7 @@ export const CalendarComponent = () => {
           disabledDays={[0, 6]}
           onDayClick={handleDayClick}
           onTimeSlotClick={handleTimeSlotClick}
+          onEventClick={handleEventClick}
         >
           {({ calEvent }) => <CalendarItem calEvent={calEvent} key={calEvent.id} />}
         </CalendarBody>

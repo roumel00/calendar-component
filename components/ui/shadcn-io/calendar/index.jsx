@@ -257,7 +257,7 @@ const TimeColumn = memo(({ timeSlots, interval, width = 'w-20' }) => {
 TimeColumn.displayName = 'TimeColumn';
 
 // Event overlay component
-const EventOverlay = memo(({ events, children, slotHeight, topOffset = 0 }) => (
+const EventOverlay = memo(({ events, children, slotHeight, topOffset = 0, onEventClick }) => (
   <div className="absolute inset-0 pointer-events-none px-2" style={{ top: `${topOffset}px` }}>
     {events.map((eventData, eventIndex) => (
       <div
@@ -267,6 +267,12 @@ const EventOverlay = memo(({ events, children, slotHeight, topOffset = 0 }) => (
           top: `${eventData.topOffset * slotHeight}px`,
           height: `${eventData.heightSlots * slotHeight - 2}px`,
           zIndex: eventIndex + 1
+        }}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (onEventClick) {
+            onEventClick(eventData);
+          }
         }}
       >
         {children({ calEvent: eventData })}
@@ -285,7 +291,8 @@ const DayView = memo(({
   endTime = DEFAULT_END_TIME,
   interval = DEFAULT_INTERVAL,
   disabledDays = [],
-  onTimeSlotClick
+  onTimeSlotClick,
+  onEventClick
 }) => {
   const [year] = useCalendarYear();
   const [month] = useCalendarMonth();
@@ -331,7 +338,7 @@ const DayView = memo(({
           />
         ))}
         
-        <EventOverlay events={dayEvents} slotHeight={slotHeight}>
+        <EventOverlay events={dayEvents} slotHeight={slotHeight} onEventClick={onEventClick}>
           {children}
         </EventOverlay>
 
@@ -359,7 +366,8 @@ const WeekView = memo(({
   interval = DEFAULT_INTERVAL,
   disabledDays = [],
   startDay,
-  onTimeSlotClick
+  onTimeSlotClick,
+  onEventClick
 }) => {
   const [weekStart] = useCalendarWeek();
 
@@ -448,7 +456,7 @@ const WeekView = memo(({
                 />
               ))}
               
-              <EventOverlay events={dayEvents} slotHeight={slotHeight} topOffset={48}>
+              <EventOverlay events={dayEvents} slotHeight={slotHeight} topOffset={48} onEventClick={onEventClick}>
                 {children}
               </EventOverlay>
             </div>
@@ -471,7 +479,7 @@ const OutOfBoundsDay = memo(({ day }) => (
 OutOfBoundsDay.displayName = 'OutOfBoundsDay';
 
 // Month view component
-const MonthView = memo(({ calEvents, children, startDay, onDayClick }) => {
+const MonthView = memo(({ calEvents, children, startDay, onDayClick, onEventClick }) => {
   const [month] = useCalendarMonth();
   const [year] = useCalendarYear();
 
@@ -539,9 +547,19 @@ const MonthView = memo(({ calEvents, children, startDay, onDayClick }) => {
       >
         {day}
         <div>
-          {calEventsForDay.slice(0, MAX_MONTH_EVENTS_DISPLAY).map((calEvent) => 
-            children({ calEvent })
-          )}
+          {calEventsForDay.slice(0, MAX_MONTH_EVENTS_DISPLAY).map((calEvent) => (
+            <div 
+              key={calEvent.id} 
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onEventClick) {
+                  onEventClick(calEvent);
+                }
+              }}
+            >
+              {children({ calEvent })}
+            </div>
+          ))}
         </div>
         {calEventsForDay.length > MAX_MONTH_EVENTS_DISPLAY && (
           <span className="block text-muted-foreground text-xs">
@@ -591,7 +609,8 @@ export const CalendarBody = memo(({
   interval = DEFAULT_INTERVAL,
   disabledDays = [],
   onDayClick,
-  onTimeSlotClick
+  onTimeSlotClick,
+  onEventClick
 }) => {
   const { startDay } = useContext(CalendarContext);
   const [view] = useCalendarView();
@@ -604,7 +623,8 @@ export const CalendarBody = memo(({
     interval,
     disabledDays,
     onDayClick,
-    onTimeSlotClick
+    onTimeSlotClick,
+    onEventClick
   };
 
   switch (view) {
@@ -951,9 +971,9 @@ export const CalendarItem = memo(({ calEvent, className }) => {
     return (
       <div 
         className={cn(
-          'text-xs p-2 rounded text-white font-medium h-full flex items-start overflow-hidden',
+          'text-xs p-2 rounded text-white font-medium h-full flex items-start overflow-clip hover:-translate-y-1 hover:shadow-lg transition-all duration-200 ease-in-out cursor-pointer',
           className
-        )} 
+        )}  
         style={{ backgroundColor: calEvent.status.color }}
       >
         <span className="truncate">{calEvent.name}</span>
@@ -962,7 +982,7 @@ export const CalendarItem = memo(({ calEvent, className }) => {
   }
 
   return (
-    <div className={cn('flex items-center gap-2', className)}>
+    <div className={cn('flex items-center gap-2 hover:-translate-y-0.5 hover:shadow-lg transition-all duration-200 ease-in-out cursor-pointer', className)}>
       <div
         className="h-2 w-2 shrink-0 rounded-full"
         style={{ backgroundColor: calEvent.status.color }} 
