@@ -31,7 +31,7 @@ This upgraded calendar component includes:
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/roumel00/calendar-component.git
    cd calendar-example
    ```
 
