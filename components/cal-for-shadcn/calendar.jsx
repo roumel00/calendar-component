@@ -9,7 +9,7 @@ import {
   CalendarProvider,
   CalendarView,
   CalendarDatePicker,
-} from '@/components/ui/shadcn-io/calendar';
+} from '@/components/cal-for-shadcn/calendar-components';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 export const Calendar = ({ 

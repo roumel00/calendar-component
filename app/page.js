@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Calendar } from "@/components/calendar";
+import { Calendar } from "@/components/cal-for-shadcn/calendar";
 
 const exampleCalEvents = [
   {

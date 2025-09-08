@@ -30,8 +30,8 @@ npx shadcn-ui@latest add button calendar dropdown-menu popover
 
 Copy the following files to your project:
 
-- `components/calendar.jsx` - The main calendar component
-- `components/ui/shadcn-io/calendar/index.jsx` - The extended calendar UI component
+- `components/cal-for-shadcn/calendar.jsx` - The main calendar component
+- `components/cal-for-shadcn/calendar-components.jsx` - The extended calendar UI component
 
 ### 4. Import and use the component
 
