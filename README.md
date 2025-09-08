@@ -7,7 +7,6 @@ This is a showcase project demonstrating an **upgraded shadcn calendar component
 This upgraded calendar component includes:
 
 - **Interactive Event Management** - Create, view, and manage calendar events
-- **Drag & Drop Functionality** - Reschedule events by dragging them to new time slots
 - **Time Slot Navigation** - Click on time slots to create new events
 - **Event Status System** - Color-coded events with different statuses (Planned, In Progress, Done)
 - **Responsive Design** - Works seamlessly across different screen sizes
@@ -24,7 +23,6 @@ This upgraded calendar component includes:
 - **Radix UI** - Unstyled, accessible UI primitives
 - **date-fns** - Modern date utility library
 - **react-day-picker** - Flexible date picker component
-- **react-dnd** - Drag and drop functionality
 - **Jotai** - State management
 
 ## 🏃‍♂️ Getting Started
@@ -112,7 +110,6 @@ export default function MyPage() {
 
 - **Event Management**: Sample events are included to showcase the calendar's capabilities
 - **Interactive Elements**: Click on days, time slots, and events to see console logs
-- **Drag & Drop**: Try dragging events to different time slots
 - **Responsive Layout**: Resize your browser to see the responsive design
 
 ## 🎨 Customization
