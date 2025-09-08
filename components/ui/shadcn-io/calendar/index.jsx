@@ -900,15 +900,40 @@ export const CalendarDatePagination = memo(({ className }) => {
   const isMobile = useIsMobile();
 
   return (
-    <div className={cn('flex items-center gap-2', isMobile && 'w-full justify-between', className)}>
-      <Button onClick={navigatePrevious} size="icon" variant="ghost">
-        <ChevronLeftIcon size={16} />
+    <div className={cn(
+      'flex items-center gap-2 w-full',
+      isMobile ? 'justify-between px-2' : 'justify-center',
+      className
+    )}>
+      <Button 
+        onClick={navigatePrevious} 
+        size={isMobile ? "lg" : "icon"} 
+        variant="ghost"
+        className={cn(
+          isMobile && 'min-h-[56px] min-w-[56px] text-lg p-4'
+        )}
+      >
+        <ChevronLeftIcon size={isMobile ? 24 : 16} />
       </Button>
-      <Button onClick={navigateToToday} variant="ghost">
+      <Button 
+        onClick={navigateToToday} 
+        variant="ghost"
+        size={isMobile ? "lg" : "default"}
+        className={cn(
+          isMobile && 'min-h-[56px] px-8 text-lg font-semibold py-4'
+        )}
+      >
         Today
       </Button>
-      <Button onClick={navigateNext} size="icon" variant="ghost">
-        <ChevronRightIcon size={16} />
+      <Button 
+        onClick={navigateNext} 
+        size={isMobile ? "lg" : "icon"} 
+        variant="ghost"
+        className={cn(
+          isMobile && 'min-h-[56px] min-w-[56px] text-lg p-4'
+        )}
+      >
+        <ChevronRightIcon size={isMobile ? 24 : 16} />
       </Button>
     </div>
   );
@@ -966,6 +991,7 @@ export const CalendarDatePicker = memo(() => {
   const [, setDay] = useCalendarDay();
   const [, setWeekStart] = useCalendarWeek();
   const { startDay } = useContext(CalendarContext);
+  const isMobile = useIsMobile();
 
   const handleDateSelect = useCallback((selectedDate) => {
     if (!selectedDate) return;
@@ -991,12 +1017,22 @@ export const CalendarDatePicker = memo(() => {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" className="w-auto justify-start text-left font-normal">
-          <CalendarIcon />
+        <Button 
+          variant="ghost" 
+          size={isMobile ? "lg" : "default"}
+          className={cn(
+            "w-auto justify-start text-left font-normal",
+            isMobile && "min-h-[56px] px-6 py-4 text-lg font-medium"
+          )}
+        >
+          <CalendarIcon size={isMobile ? 20 : 16} />
           <span>Pick a date</span>
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-auto p-0">
+      <PopoverContent className={cn(
+        "w-auto p-0",
+        isMobile && "scale-140"
+      )}>
       <Calendar
         mode="single"
         onSelect={handleDateSelect}
@@ -1042,8 +1078,8 @@ export const CalendarDate = memo(({ children }) => {
         {dateDisplay}
       </div>
       <div className={cn(
-        "flex gap-2 items-center justify-center",
-        isMobile && "flex-col"
+        "flex gap-2 items-center",
+        isMobile ? "flex-col w-full" : "justify-center"
       )}>
         {children}
       </div>

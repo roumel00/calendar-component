@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { CalendarComponent } from "@/components/calendar-component";
+import { Calendar } from "@/components/calendar";
 
 const exampleCalEvents = [
   {
@@ -40,7 +40,7 @@ export default function Home() {
         <h1 className="text-2xl font-bold text-center mb-6 text-foreground">
           Calendar
         </h1>
-        <CalendarComponent 
+        <Calendar
           events={events}
           onDayClick={handleDayClick}
           onTimeSlotClick={handleTimeSlotClick}

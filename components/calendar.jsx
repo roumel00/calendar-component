@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/shadcn-io/calendar';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-export const CalendarComponent = ({ 
+export const Calendar = ({ 
   events = [],
   onDayClick,
   onTimeSlotClick,
@@ -27,7 +27,7 @@ export const CalendarComponent = ({
   return (
     <div className={isMobile ? "my-4" : "my-8"}>
       <CalendarProvider className="w-full">
-        <CalendarDate>
+        <CalendarDate className="w-full">
           <CalendarDatePagination />
           <CalendarDatePicker />
           {!isMobile && <CalendarView />}
