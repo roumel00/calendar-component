@@ -59,7 +59,7 @@ function MyCalendar() {
   ]);
 
   return (
-    <CalendarComponent 
+    <Calendar
       events={events}
       onDayClick={handleDayClick}
       onTimeSlotClick={handleTimeSlotClick}
@@ -202,7 +202,7 @@ Here are screenshots showing the calendar in different views:
 
 ## Styling
 
-The component uses Tailwind CSS classes and integrates seamlessly with Shadcn UI's design system. All styling is handled through the Shadcn UI components you pass as props.
+The component uses Tailwind CSS classes and integrates seamlessly with Shadcn UI's design system. All styling is handled through the Shadcn UI components, and assumes they live in @/components/ui/.
 
 ## License
 
