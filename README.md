@@ -180,17 +180,15 @@ const handleEventClick = (calEvent) => {
 
 Here are screenshots showing the calendar in different views:
 
-### Month View
-![Month View](./public/month-view.png)
+<div align="center">
 
-### Week View
-![Week View](./public/week-view.png)
+| Month View | Week View |
+|------------|-----------|
+| <img src="./public/month-view.png" alt="Month View" height="300"> | <img src="./public/week-view.png" alt="Week View" height="300"> |
+| **Day View** | **Mobile View** |
+| <img src="./public/day-view.png" alt="Day View" height="300"> | <img src="./public/mobile-view.png" alt="Mobile View" height="300"> |
 
-### Day View
-![Day View](./public/day-view.png)
-
-### Mobile View
-![Mobile View](./public/mobile-view.png)
+</div>
 
 ## Features
 
