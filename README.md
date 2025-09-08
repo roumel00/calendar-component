@@ -176,6 +176,22 @@ const handleEventClick = (calEvent) => {
 ```
 
 
+## Examples
+
+Here are screenshots showing the calendar in different views:
+
+### Month View
+![Month View](./public/month-view.png)
+
+### Week View
+![Week View](./public/week-view.png)
+
+### Day View
+![Day View](./public/day-view.png)
+
+### Mobile View
+![Mobile View](./public/mobile-view.png)
+
 ## Features
 
 - 📅 **Multiple Views**: Day, week, and month views
