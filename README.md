@@ -96,7 +96,6 @@ export default function MyPage() {
           onDayClick={handleDayClick}
           onTimeSlotClick={handleTimeSlotClick}
           onEventClick={handleEventClick}
-          onEventUpdate={handleEventUpdate}
         >
           {({ calEvent }) => <CalendarItem calEvent={calEvent} key={calEvent.id} />}
         </CalendarBody>

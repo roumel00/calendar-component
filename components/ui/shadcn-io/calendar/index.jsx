@@ -10,8 +10,9 @@ import {
   ChevronDownIcon,
   Rows3,
 } from 'lucide-react';
-import { createContext, memo, useCallback, useContext, useMemo } from 'react';
+import { createContext, memo, useCallback, useContext, useMemo, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -33,7 +34,6 @@ const CALENDAR_VIEWS = {
   DAY: 'day'
 };
 
-
 const TIME_INTERVALS = {
   FIFTEEN: 15,
   THIRTY: 30,
@@ -41,9 +41,15 @@ const TIME_INTERVALS = {
 };
 
 const SLOT_HEIGHTS = {
-  [TIME_INTERVALS.FIFTEEN]: { pixels: 32, class: 'h-8' },
-  [TIME_INTERVALS.THIRTY]: { pixels: 48, class: 'h-12' },
-  [TIME_INTERVALS.SIXTY]: { pixels: 64, class: 'h-16' }
+  [TIME_INTERVALS.FIFTEEN]: { pixels: 32, class: 'h-8', mobileClass: 'h-12' },
+  [TIME_INTERVALS.THIRTY]: { pixels: 48, class: 'h-12', mobileClass: 'h-16' },
+  [TIME_INTERVALS.SIXTY]: { pixels: 64, class: 'h-16', mobileClass: 'h-20' }
+};
+
+const MOBILE_SLOT_HEIGHTS = {
+  [TIME_INTERVALS.FIFTEEN]: { pixels: 48, class: 'h-12' },
+  [TIME_INTERVALS.THIRTY]: { pixels: 64, class: 'h-16' },
+  [TIME_INTERVALS.SIXTY]: { pixels: 80, class: 'h-20' }
 };
 
 const DEFAULT_START_TIME = '08:00';
@@ -66,7 +72,31 @@ export const useCalendarYear = () => useAtom(yearAtom);
 export const useCalendarMonth = () => useAtom(monthAtom);
 export const useCalendarDay = () => useAtom(dayAtom);
 export const useCalendarWeek = () => useAtom(weekStartAtom);
-export const useCalendarView = () => useAtom(viewAtom);
+
+// Enhanced useCalendarView hook with mobile-first logic
+export const useCalendarView = () => {
+  const [view, setViewInternal] = useAtom(viewAtom);
+  const isMobile = useIsMobile();
+
+  // Override view setter to lock to DAY view on mobile
+  const setView = useCallback((newView) => {
+    if (isMobile) {
+      // Only allow DAY view on mobile devices
+      setViewInternal(CALENDAR_VIEWS.DAY);
+    } else {
+      setViewInternal(newView);
+    }
+  }, [isMobile, setViewInternal]);
+
+  // Automatically set to DAY view when switching to mobile
+  useEffect(() => {
+    if (isMobile && view !== CALENDAR_VIEWS.DAY) {
+      setViewInternal(CALENDAR_VIEWS.DAY);
+    }
+  }, [isMobile, view, setViewInternal]);
+
+  return [view, setView];
+};
 
 // Context
 export const CalendarContext = createContext({
@@ -197,7 +227,9 @@ const useEventProcessor = (calEvents, timeSlots, startTime, interval) => {
 // Component helpers
 const isHourSlot = (slotIndex, interval) => slotIndex % (60 / interval) === 0;
 
-const getSlotStyles = (interval) => SLOT_HEIGHTS[interval];
+const getSlotStyles = (interval, isMobile = false) => {
+  return isMobile ? MOBILE_SLOT_HEIGHTS[interval] : SLOT_HEIGHTS[interval];
+};
 
 // Current time indicator
 const CurrentTimeIndicator = memo(({ startTime, endTime, interval, slotHeight }) => {
@@ -230,8 +262,8 @@ const CurrentTimeIndicator = memo(({ startTime, endTime, interval, slotHeight })
 CurrentTimeIndicator.displayName = 'CurrentTimeIndicator';
 
 // Time column component
-const TimeColumn = memo(({ timeSlots, interval, width = 'w-20' }) => {
-  const { pixels: slotHeight, class: slotHeightClass } = getSlotStyles(interval);
+const TimeColumn = memo(({ timeSlots, interval, width = 'w-20', isMobile = false }) => {
+  const { pixels: slotHeight, class: slotHeightClass } = getSlotStyles(interval, isMobile);
   
   return (
     <div className={cn(width, 'flex-shrink-0 border-r')}>
@@ -239,8 +271,9 @@ const TimeColumn = memo(({ timeSlots, interval, width = 'w-20' }) => {
         <div 
           key={slot.time} 
           className={cn(
-            'text-sm text-muted-foreground px-3 py-2 text-right flex items-center justify-end',
+            'text-muted-foreground text-right flex items-center justify-end',
             slotHeightClass,
+            isMobile ? 'text-xs px-2 py-1' : 'text-sm px-3 py-2',
             isHourSlot(index, interval) ? 'border-t border-gray-300 font-medium' : 'border-t border-gray-100'
           )}
         >
@@ -258,12 +291,18 @@ const TimeColumn = memo(({ timeSlots, interval, width = 'w-20' }) => {
 TimeColumn.displayName = 'TimeColumn';
 
 // Event overlay component
-const EventOverlay = memo(({ events, children, slotHeight, topOffset = 0, onEventClick }) => (
-  <div className="absolute inset-0 pointer-events-none px-2" style={{ top: `${topOffset}px` }}>
+const EventOverlay = memo(({ events, children, slotHeight, topOffset = 0, onEventClick, isMobile = false }) => (
+  <div className={cn(
+    "absolute inset-0 pointer-events-none",
+    isMobile ? "px-1" : "px-2"
+  )} style={{ top: `${topOffset}px` }}>
     {events.map((eventData, eventIndex) => (
       <div
         key={eventData.id || eventIndex}
-        className="absolute left-2 right-2 pointer-events-auto"
+        className={cn(
+          "absolute pointer-events-auto",
+          isMobile ? "left-1 right-1" : "left-2 right-2"
+        )}
         style={{
           top: `${eventData.topOffset * slotHeight}px`,
           height: `${eventData.heightSlots * slotHeight - 2}px`,
@@ -293,7 +332,8 @@ const TimeSlot = memo(({
   interval, 
   slotHeightClass, 
   onTimeSlotClick, 
-  isToday 
+  isToday,
+  isMobile = false
 }) => {
   const handleClick = useCallback(() => {
     if (isDisabled) return;
@@ -312,9 +352,13 @@ const TimeSlot = memo(({
           'cursor-pointer hover:bg-blue-100',
         slotHeightClass,
         isHourSlot(slotIndex, interval) ? 'border-t border-gray-300' : 'border-t border-gray-100',
-        isToday && !isDisabled && 'bg-blue-50/30'
+        isToday && !isDisabled && 'bg-blue-50/30',
+        isMobile && 'touch-manipulation'
       )}
       onClick={handleClick}
+      style={{
+        minHeight: isMobile ? '44px' : 'auto'
+      }}
     />
   );
 });
@@ -330,26 +374,59 @@ const DayView = memo(({
   interval = DEFAULT_INTERVAL,
   disabledDays = [],
   onTimeSlotClick,
-  onEventClick,
-  onEventUpdate
+  onEventClick
 }) => {
   const [year] = useCalendarYear();
   const [month] = useCalendarMonth();
   const [day] = useCalendarDay();
+  const isMobile = useIsMobile();
 
   const currentDay = useMemo(() => new Date(year, month, day), [year, month, day]);
   const timeSlots = useTimeSlots(startTime, endTime, interval);
   const processEvents = useEventProcessor(calEvents, timeSlots, startTime, interval);
   const dayEvents = useMemo(() => processEvents(currentDay), [processEvents, currentDay]);
 
-  const { pixels: slotHeight, class: slotHeightClass } = getSlotStyles(interval);
+  const { pixels: slotHeight, class: slotHeightClass } = getSlotStyles(interval, isMobile);
   const isToday = isSameDay(currentDay, new Date());
   const dayOfWeek = currentDay.getDay();
   const isDisabled = disabledDays.includes(dayOfWeek);
 
+  // Auto-scroll to current time on mobile
+  const scrollContainerRef = useCallback((node) => {
+    if (node && isMobile && isToday) {
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      const startMinutes = parseTimeString(startTime);
+      
+      if (currentMinutes >= startMinutes) {
+        const minutesFromStart = currentMinutes - startMinutes;
+        const scrollPosition = (minutesFromStart / interval) * slotHeight;
+        
+        // Scroll to current time with some offset for better UX
+        setTimeout(() => {
+          node.scrollTo({
+            top: Math.max(0, scrollPosition - 100),
+            behavior: 'smooth'
+          });
+        }, 100);
+      }
+    }
+  }, [isMobile, isToday, startTime, interval, slotHeight]);
+
   return (
-    <div className="flex flex-grow overflow-auto">
-      <TimeColumn timeSlots={timeSlots} interval={interval} />
+    <div 
+      ref={scrollContainerRef}
+      className={cn(
+        "flex flex-grow overflow-auto",
+        isMobile && "scroll-smooth touch-pan-y"
+      )}
+    >
+      <TimeColumn 
+        timeSlots={timeSlots} 
+        interval={interval} 
+        width={isMobile ? 'w-16' : 'w-20'}
+        isMobile={isMobile}
+      />
       
       <div className="flex-grow relative">
         {timeSlots.map((slot, slotIndex) => (
@@ -363,12 +440,17 @@ const DayView = memo(({
             interval={interval}
             slotHeightClass={slotHeightClass}
             onTimeSlotClick={onTimeSlotClick}
-            onEventUpdate={onEventUpdate}
             isToday={isToday}
+            isMobile={isMobile}
           />
         ))}
         
-        <EventOverlay events={dayEvents} slotHeight={slotHeight} onEventClick={onEventClick}>
+        <EventOverlay 
+          events={dayEvents} 
+          slotHeight={slotHeight} 
+          onEventClick={onEventClick}
+          isMobile={isMobile}
+        >
           {children}
         </EventOverlay>
 
@@ -400,7 +482,6 @@ const WeekDayColumn = memo(({
   children,
   onTimeSlotClick,
   onEventClick,
-  onEventUpdate,
   startTime
 }) => {
   const isToday = isSameDay(day, new Date());
@@ -433,7 +514,6 @@ const WeekDayColumn = memo(({
           interval={interval}
           slotHeightClass={slotHeightClass}
           onTimeSlotClick={onTimeSlotClick}
-          onEventUpdate={onEventUpdate}
           isToday={isToday}
         />
       ))}
@@ -457,8 +537,7 @@ const WeekView = memo(({
   disabledDays = [],
   startDay,
   onTimeSlotClick,
-  onEventClick,
-  onEventUpdate
+  onEventClick
 }) => {
   const [weekStart] = useCalendarWeek();
 
@@ -522,7 +601,6 @@ const WeekView = memo(({
               children={children}
               onTimeSlotClick={onTimeSlotClick}
               onEventClick={onEventClick}
-              onEventUpdate={onEventUpdate}
               startTime={startTime}
             />
           );
@@ -597,7 +675,7 @@ const MonthDay = memo(({
 MonthDay.displayName = 'MonthDay';
 
 // Month view component
-const MonthView = memo(({ calEvents, children, startDay, onDayClick, onEventClick, onEventUpdate }) => {
+const MonthView = memo(({ calEvents, children, startDay, onDayClick, onEventClick }) => {
   const [month] = useCalendarMonth();
   const [year] = useCalendarYear();
 
@@ -663,7 +741,6 @@ const MonthView = memo(({ calEvents, children, startDay, onDayClick, onEventClic
         children={children}
         onDayClick={onDayClick}
         onEventClick={onEventClick}
-        onEventUpdate={onEventUpdate}
         isToday={isToday}
       />
     );
@@ -709,8 +786,7 @@ export const CalendarBody = memo(({
   disabledDays = [],
   onDayClick,
   onTimeSlotClick,
-  onEventClick,
-  onEventUpdate
+  onEventClick
 }) => {
   const { startDay } = useContext(CalendarContext);
   const [view] = useCalendarView();
@@ -724,8 +800,7 @@ export const CalendarBody = memo(({
     disabledDays,
     onDayClick,
     onTimeSlotClick,
-    onEventClick,
-    onEventUpdate
+    onEventClick
   };
 
   switch (view) {
@@ -822,9 +897,10 @@ const useCalendarNavigation = () => {
 // Date pagination component
 export const CalendarDatePagination = memo(({ className }) => {
   const { navigateToToday, navigatePrevious, navigateNext } = useCalendarNavigation();
+  const isMobile = useIsMobile();
 
   return (
-    <div className={cn('flex items-center gap-2', className)}>
+    <div className={cn('flex items-center gap-2', isMobile && 'w-full justify-between', className)}>
       <Button onClick={navigatePrevious} size="icon" variant="ghost">
         <ChevronLeftIcon size={16} />
       </Button>
@@ -856,7 +932,6 @@ export const CalendarView = memo(() => {
 
   const currentView = viewConfig[view] || viewConfig[CALENDAR_VIEWS.MONTH];
   const IconComponent = currentView.icon;
-
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -942,6 +1017,7 @@ export const CalendarDate = memo(({ children }) => {
   const [year] = useCalendarYear();
   const [day] = useCalendarDay();
   const [weekStart] = useCalendarWeek();
+  const isMobile = useIsMobile();
 
   const dateDisplay = useMemo(() => {
     switch (view) {
@@ -958,11 +1034,17 @@ export const CalendarDate = memo(({ children }) => {
   }, [view, month, year, day, weekStart]);
 
   return (
-    <div className="flex items-center justify-between p-3 border-b">
-      <div className="text-lg font-semibold">
+    <div className={cn(
+      "p-3 border-b",
+      isMobile ? "flex flex-col gap-3 items-center" : "flex items-center justify-between"
+    )}>
+      <div className="text-lg font-semibold text-center">
         {dateDisplay}
       </div>
-      <div className="flex items-center gap-2">
+      <div className={cn(
+        "flex gap-2 items-center justify-center",
+        isMobile && "flex-col"
+      )}>
         {children}
       </div>
     </div>
@@ -1067,16 +1149,22 @@ CalendarHeader.displayName = 'CalendarHeader';
 // Calendar item component
 export const CalendarItem = memo(({ calEvent, className }) => {
   const [view] = useCalendarView();
+  const isMobile = useIsMobile();
 
   if (view === CALENDAR_VIEWS.WEEK || view === CALENDAR_VIEWS.DAY) {
     return (
       <div 
         className={cn(
-          'text-xs p-2 rounded text-white font-medium h-full flex items-start overflow-hidden transition-all duration-200 ease-in-out cursor-pointer',
-          'hover:-translate-y-1 hover:shadow-lg',
+          'rounded text-white font-medium h-full flex items-start overflow-hidden transition-all duration-200 ease-in-out cursor-pointer',
+          isMobile ? 
+            'text-xs p-1.5 touch-manipulation' : 
+            'text-xs p-2 hover:-translate-y-1 hover:shadow-lg',
           className
         )}  
-        style={{ backgroundColor: calEvent.status.color }}
+        style={{ 
+          backgroundColor: calEvent.status.color,
+          minHeight: isMobile ? '44px' : 'auto'
+        }}
       >
         <span className="block w-full whitespace-normal break-words [overflow-wrap:anywhere]">
           {calEvent.name}
@@ -1089,7 +1177,9 @@ export const CalendarItem = memo(({ calEvent, className }) => {
     <div 
       className={cn(
         'flex items-center gap-2 transition-all duration-200 ease-in-out cursor-pointer',
-        'hover:-translate-y-0.5 hover:shadow-lg',
+        isMobile ? 
+          'touch-manipulation' : 
+          'hover:-translate-y-0.5 hover:shadow-lg',
         className
       )}
     >
